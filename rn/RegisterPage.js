@@ -5,7 +5,7 @@
 
 'use strict'
 import React, {Component} from 'react';
-import {View, Text, StyleSheet, TextInput, Alert, ToastAndroid} from 'react-native'
+import {View, Text, StyleSheet, TextInput, Alert, ToastAndroid, AsyncStorage} from 'react-native'
 import Button from './widget/Button'
 import ProgressBar from './widget/ProgressBar'
 import HttpUtils from './utils/HttpUtils'
@@ -46,7 +46,7 @@ export default class RegisterPage extends Component {
         <Button text="注册" styles={styles.btnRegister} onClick={this._handleRegister.bind(this)}/>
       </View>
     );
-    let progress = this.state.isLoading ? (<ProgressBar/>) : null;
+    let progress = this.state.isRefresh ? (<ProgressBar/>) : null;
 
     return (
       <View style={styles.container}>
@@ -68,6 +68,8 @@ export default class RegisterPage extends Component {
         .then(jsonData=> {
           if (jsonData && jsonData.objectId) {
             ToastAndroid.show('注册成功', ToastAndroid.SHORT);
+            AsyncStorage.setItem(Const.KEY_SESSION_TOKEN, jsonData.sessionToken);
+            AsyncStorage.setItem(Const.KEY_CURRENT_USER, jsonData);
             setTimeout(()=> {
               this.setState({isLoading: false});
               this.props.navigator.replace({

@@ -5,11 +5,13 @@
 import React, {Component} from 'react';
 import {
   View, Text, Image, ListView, StyleSheet, DrawerLayoutAndroid,
-  RefreshControl, TouchableHighlight, AsyncStorage,BackAndroid
+  RefreshControl, TouchableHighlight, AsyncStorage, BackAndroid, Alert
 } from 'react-native'
 import Const from './Const'
 import LoginPage from './LoginPage'
+import PostInvitePage from './PostInvitePage'
 import PlayToolbar from './widget/PlayToolbar'
+import HttpUtils from './utils/HttpUtils'
 
 const DRAWER_WIDTH = 300;
 
@@ -18,19 +20,28 @@ export default  class HomePage extends Component {
   constructor(props) {
     super(props);
     // 初始状态
-    var dataSource = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2}).cloneWithRows(['haha', '嘎嘎', '我是标题', '你妈', '嘻嘻的撒打算打算的阿斯顿阿斯顿爱上', 'haha', '嘎嘎', '我是标题', '你妈', '嘻嘻的撒打算打算的阿斯顿阿斯顿爱上', 'haha', '嘎嘎', '我是标题', '你妈', '嘻嘻的撒打算打算的阿斯顿阿斯顿爱上', 'haha', '嘎嘎', '我是标题', '你妈', '嘻嘻的撒打算打算的阿斯顿阿斯顿爱上', 'haha', '嘎嘎', '我是标题', '你妈', '嘻嘻的撒打算打算的阿斯顿阿斯顿爱上', 'haha', '嘎嘎', '我是标题', '你妈', '嘻嘻的撒打算打算的阿斯顿阿斯顿爱上', 'haha', '嘎嘎', '我是标题', '你妈', '嘻嘻的撒打算打算的阿斯顿阿斯顿爱上', 'haha', '嘎嘎', '我是标题', '你妈', '嘻嘻的撒打算打算的阿斯顿阿斯顿爱上', 'haha', '嘎嘎', '我是标题', '你妈', '嘻嘻的撒打算打算的阿斯顿阿斯顿爱上']);
+    var dataSource = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
+    this.skipItemCount = 0;//分页显示所需变量
+    this.pageSize = 10;
     this.state = {
       dataSource: dataSource,
-      isRefreshing: false
-    };
+      isRefresh: false,
+      isLoadMore: false
+    }
+  }
+
+  componentDidMount() {
+    this.setState({isRefresh: true});
+    this._onRefresh();
   }
 
   render() {
+    let {loginUser}=this.props.params;
     var navigationView = (
       <View style={{flex: 1, backgroundColor: '#fff'}}>
         <Image resizeMode={Image.resizeMode.cover} source={require('./img/bg_drawer_header.png')} style={{width: DRAWER_WIDTH, height: 200}}>
           <Image source={require('./img/erha.jpg')} style={styles.drawerHeaderImgAvatar}/>
-          <Text style={styles.drawerHeaderTxtUsername}>陈岸涛</Text>
+          <Text style={styles.drawerHeaderTxtUsername}>{loginUser.username}</Text>
         </Image>
 
         <View style={{flex: 6}}>
@@ -62,12 +73,23 @@ export default  class HomePage extends Component {
           </View>
           <ListView
             dataSource={this.state.dataSource}
-            renderRow={this._renderItem.bind(this)}/>
+            renderRow={this._renderItem.bind(this)}
+            onEndReached={this._loadMore.bind(this)}
+            onEndReachedThreshold={30}
+            refreshControl={
+              <RefreshControl
+                colors={[Const.Colors.MAIN_COLOR]}
+                refreshing={this.state.isRefresh}
+                onRefresh={this._onRefresh.bind(this)}
+                title='Loading...'
+                progressBackgroundColor='#F0F0F0'/>
+            }/>
         </View>
       </DrawerLayoutAndroid>
     );
   }
 
+  //选择类别的 item
   _getHeaderItem(text, iconPath) {
     let img;
     if (text == '电影') {
@@ -91,6 +113,7 @@ export default  class HomePage extends Component {
     );
   }
 
+  //drawer 的 item
   _getDrawerMenuItem(text) {
     let icon;
     switch (text) {
@@ -123,19 +146,20 @@ export default  class HomePage extends Component {
     );
   }
 
+  //渲染 listview 的 item
   _renderItem(item) {
     return (
       <View style={styles.itemWrap}>
-        <Text style={styles.itemTxtCategory}>来自 美食</Text>
+        <Text style={styles.itemTxtCategory}>来自 {item.category}</Text>
         <View style={{flexDirection: 'row', marginTop: 40}}>
           <View style={styles.itemUserInfoWrap}>
             <Image style={styles.itemImgAvatar} source={require('./img/erha.jpg')}/>
-            <Text style={styles.itemTxtUsername}>陈岸涛</Text>
+            <Text style={styles.itemTxtUsername}>{item.author.username}</Text>
           </View>
           <View style={styles.itemInviteWrap}>
             <Text numberOfLines={2}
-                  style={styles.itemTxtTitle}>{item}</Text>
-            <Text numberOfLines={3} style={styles.itemTxtContent}>我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容我是内容内容</Text>
+                  style={styles.itemTxtTitle}>{item.title}</Text>
+            <Text numberOfLines={3} style={styles.itemTxtContent}>{item.content}</Text>
           </View>
         </View>
       </View>
@@ -151,7 +175,15 @@ export default  class HomePage extends Component {
         alert('个人');
         break;
       case '邀约':
-        alert('邀约');
+        this.props.navigator.push({
+          component: PostInvitePage,
+          params: {
+            refreshPage: ()=> {
+              this.setState({isRefresh: true});
+              this._onRefresh();
+            }
+          }
+        });
         break;
       case '朋友':
         alert('朋友');
@@ -174,6 +206,51 @@ export default  class HomePage extends Component {
   _handleExit() {
     BackAndroid.exitApp();
   }
+
+  _onRefresh() {
+    this.skipItemCount = 0;
+    HttpUtils.get(Const.BASE_URL + '1.1/classes/invitation', {
+      include: 'author',
+      limit: this.pageSize,
+      order: '-createdAt',
+      skip: this.skipItemCount
+    })
+      .then(jsonData=> {
+        this.datas = jsonData.results;
+        this.setState({
+          dataSource: this.state.dataSource.cloneWithRows(this.datas),
+          isRefresh: false,
+        });
+      })
+      .catch(error=> {
+        Alert.alert(error + '');
+      });
+  }
+
+  _loadMore() {
+    if (this.state.isLoadMore) {
+      return;
+    }
+    this.skipItemCount += this.pageSize;
+    this.setState({isLoadMore: true});
+    HttpUtils.get(Const.BASE_URL + '1.1/classes/invitation', {
+      include: 'author',
+      limit: this.pageSize,
+      order: '-createdAt',
+      skip:this.skipItemCount
+    })
+      .then(jsonData=> {
+        this.datas = [...this.datas, ...jsonData.results];
+        this.setState({
+          dataSource: this.state.dataSource.cloneWithRows(this.datas),
+          isLoadMore: false
+        });
+      })
+      .catch(error=> {
+        Alert.alert(error + '');
+      });
+  }
+
 
 }
 

@@ -17,11 +17,15 @@ const Const = {
 
   //用户自动登录 token
   KEY_SESSION_TOKEN: "sessionToken",
+  //当前登录用户的 json
+  KEY_CURRENT_USER:'currentUser',
+
 
   Colors: {
     MAIN_COLOR: '#039be5',
     BACKGROUND_COLOR: '#F2F2F2',
     DIVIDER: '#B7B7B7',
+    UNDERLAY_COLOR: '#a9b7b7',
   }
 
 };

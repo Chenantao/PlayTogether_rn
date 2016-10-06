@@ -9,10 +9,10 @@ import {AppRegistry, StyleSheet, BackAndroid, Navigator, StatusBar, View, Image,
 var Dimensions = require('Dimensions');
 import LoginPage from './LoginPage'
 import HomePage from './HomePage'
+import PostInvitePage from './PostInvitePage'
 import Const from './Const'
 import HttpUtils from './utils/HttpUtils'
 
-var mWantExit = false;
 class PlayMain extends Component {
 
   // 构造
@@ -26,20 +26,22 @@ class PlayMain extends Component {
 
 
   _handleBack() {
-    if (this.navigator && this.navigator.getCurrentRoutes().length > 1) {
+    const routes = this.navigator.getCurrentRoutes();
+    let topRoute = routes[routes.length - 1];
+    if (topRoute.onBackPress) {
+      return topRoute.onBackPress();
+    }
+    if (this.navigator && routes.length > 1) {
       this.navigator.pop();
       return true;
     }
-    if (!mWantExit) {
-      mWantExit = true;
-      ToastAndroid.show('再按一次退出', ToastAndroid.SHORT);
-      setTimeout(()=> {
-        mWantExit = false;
-      }, 1500);
-      return true;
-    } else {
+    if (this.lastBackPressed && this.lastBackPressed + 2000 >= Date.now()) {
+      //最近2秒内按过back键，可以退出应用。
       return false;
     }
+    this.lastBackPressed = Date.now();
+    ToastAndroid.show('再按一次退出应用', ToastAndroid.SHORT);
+    return true;
   }
 
   componentDidMount() {
@@ -50,7 +52,7 @@ class PlayMain extends Component {
         .then(jsonData=> {
           //已登录
           if (jsonData.objectId) {
-            this.setState({firstPage: HomePage})
+            this.setState({firstPage: HomePage, loginUser: jsonData})
           } else {
             this.setState({firstPage: LoginPage})
           }
@@ -74,7 +76,11 @@ class PlayMain extends Component {
         <Navigator
           ref={component => this.navigator = component}
           initialRoute={{
-            component: this.state.firstPage
+            component: this.state.firstPage,
+            //component: PostInvitePage,
+            params: {
+              loginUser: this.state.loginUser
+            }
           }}
           renderScene={(route, navigator) => { // 用来渲染navigator栈顶的route里的component页面
             // route={component: xxx, name: xxx, ...}， navigator.......route 用来在对应界面获取其他键值

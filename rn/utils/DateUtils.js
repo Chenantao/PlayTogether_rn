@@ -1,12 +1,8 @@
 const DateUtils = {
 
-  convertDate (date: string) { // change the date like '2015-11-05' into '2015/11/05'
-    return date.replace(new RegExp('-', 'g'), '/') // 居然是一个一个替换,使用正则表达式解决方案
-  },
-
   getCurrentDate () {
     // this.extendDate()
-    return new Date().Format('yyyy/MM/dd')
+    return new Date().format('yyyy/MM/dd')
   },
 
   extendDate () {
@@ -14,9 +10,9 @@ const DateUtils = {
 	// 月(M)、日(d)、小时(h)、分(m)、秒(s)、季度(q) 可以用 1-2 个占位符，
 	// 年(y)可以用 1-4 个占位符，毫秒(S)只能用 1 个占位符(是 1-3 位的数字)
 	// 例子：
-	// (new Date()).Format("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423
-	// (new Date()).Format("yyyy-M-d h:m:s.S")      ==> 2006-7-2 8:9:4.18
-    Date.prototype.Format = function (fmt) {
+	// (new Date()).format("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423
+	// (new Date()).format("yyyy-M-d h:m:s.S")      ==> 2006-7-2 8:9:4.18
+    Date.prototype.format = function (fmt) {
       var o = {
         'M+': this.getMonth() + 1, // 月份
         'd+': this.getDate(), // 这里主要是为了适配before API
@@ -32,7 +28,12 @@ const DateUtils = {
       }
       return fmt
     }
+  },
+
+  getTimestamp(date){
+    return parseInt(date.getTime() / 1000);
   }
+
 }
 
 DateUtils.extendDate()

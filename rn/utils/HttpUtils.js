@@ -121,5 +121,32 @@ export default class HttpUtils {
 
   }
 
-
+  static async getCurrentUser() {
+    return await new Promise((resolve, reject) => {
+      AsyncStorage.getItem(Const.KEY_CURRENT_USER, (error, result)=> {
+        if (error || !result) {
+          HttpUtils.get(Const.BASE_URL + '1.1/users/me')
+            .then(jsonData=> {
+              resolve(jsonData);
+            })
+            .catch(error=> {
+              // alert('error:' + error);
+              reject(new Error(''));
+            })
+          return;
+        }
+        resolve(result);
+      });
+    })
+      .then(currentUser=> {
+        return currentUser;
+      })
+      .catch(error=> {
+        return '';
+      });
+  }
 }
+
+
+
+

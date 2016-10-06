@@ -23,7 +23,7 @@ export default class LoginPage extends Component {
   }
 
   render() {
-    let progress = this.state.isLoading ? (<ProgressBar/>) : null;
+    let progress = this.state.isRefresh ? (<ProgressBar/>) : null;
 
     return (
       <View style={styles.container}>
@@ -78,12 +78,13 @@ export default class LoginPage extends Component {
           if (jsonData && jsonData.objectId) {
             ToastAndroid.show('登录成功', ToastAndroid.SHORT);
             AsyncStorage.setItem(Const.KEY_SESSION_TOKEN, jsonData.sessionToken);
+            AsyncStorage.setItem(Const.KEY_CURRENT_USER, jsonData);
             setTimeout(()=> {
               this.setState({isLoading: false});
               this.props.navigator.replace({
                 component: HomePage,
                 params: {
-                  user: jsonData,
+                  loginUser: jsonData,
                 }
 
               })
